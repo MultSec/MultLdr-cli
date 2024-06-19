@@ -5,7 +5,6 @@ import (
     "os"
 
     "github.com/urfave/cli/v2"
-	"github.com/mgutz/ansi"
 )
 
 func main() {
@@ -100,10 +99,15 @@ func main() {
                     printPlugins("Using the following settings", config)
                     
 					payloadFile := ctx.String("bin")
-                    printLog(logInfo, fmt.Sprintf("%s %s", ansi.ColorFunc("default+hb")("Using payload file: "), ansi.ColorFunc("cyan")(payloadFile)))
-                    
-                    generateLoader(config, payloadFile)
 
+                    id, err := generateID()
+                    if err != nil {
+                        printLog(logError, fmt.Sprintf("%v", err))
+                        return nil
+                    }
+
+                    sendPayload(ctx.String("server"), ctx.Int("port"), payloadFile, id)
+                    
                     return nil
                 },
             },

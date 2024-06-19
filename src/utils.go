@@ -6,6 +6,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base32"
+	"encoding/binary"
+    "io"
+    "mime/multipart"
 
     "github.com/AlecAivazis/survey/v2"
 	"github.com/mgutz/ansi"
@@ -217,4 +223,114 @@ func saveConfigFile(config map[string][]string) {
 	}
 }
 
+// Generate UUID to be used for loader processing
+func generateID() (string, error) {
+	// Generate a random 16-bit integer
+	var randomInt uint16
+	err := binary.Read(rand.Reader, binary.LittleEndian, &randomInt)
+	if err != nil {
+		return "", fmt.Errorf("error generating random 16-bit integer: %w", err)
+	}
+
+	// Convert the random integer to a byte slice
+	randomBytes := make([]byte, 2)
+	binary.LittleEndian.PutUint16(randomBytes, randomInt)
+
+	// Hash the byte slice using SHA-256
+	hasher := sha256.New()
+	_, err = hasher.Write(randomBytes)
+	if err != nil {
+		return "", fmt.Errorf("error hashing the random bytes: %w", err)
+	}
+	hash := hasher.Sum(nil)
+
+	// Encode the hash in Base32
+	base32Hash := base32.StdEncoding.EncodeToString(hash)
+
+	return base32Hash, nil
+}
+
+func UploadMultipartFile(client *http.Client, uri, key, path string) (*http.Response, error) {
+    body, writer := io.Pipe()
+
+    req, err := http.NewRequest(http.MethodPost, uri, body)
+    if err != nil {
+        return nil, err
+    }
+
+    mwriter := multipart.NewWriter(writer)
+    req.Header.Add("Content-Type", mwriter.FormDataContentType())
+
+    errchan := make(chan error)
+
+    go func() {
+        defer close(errchan)
+        defer writer.Close()
+        defer mwriter.Close()
+
+        w, err := mwriter.CreateFormFile(key, path)
+        if err != nil {
+            errchan <- err
+            return
+        }
+
+        in, err := os.Open(path)
+        if err != nil {
+            errchan <- err
+            return
+        }
+        defer in.Close()
+
+        if written, err := io.Copy(w, in); err != nil {
+            errchan <- fmt.Errorf("error copying %s (%d bytes written): %v", path, written, err)
+            return
+        }
+
+        if err := mwriter.Close(); err != nil {
+            errchan <- err
+            return
+        }
+    }()
+
+    resp, err := client.Do(req)
+    merr := <-errchan
+
+    if err != nil || merr != nil {
+        return resp, fmt.Errorf("http error: %v, multipart error: %v", err, merr)
+    }
+
+    return resp, nil
+}
+
+func sendPayload(ip string, port int, payloadFile string, id string) {
+	printLog(logInfo, fmt.Sprintf("%s %s", ansi.ColorFunc("default+hb")("Payload file: "), ansi.ColorFunc("cyan")(payloadFile)))
+	printLog(logInfo, fmt.Sprintf("%s %s", ansi.ColorFunc("default+hb")("Client ID: "), ansi.ColorFunc("cyan")(id)))
+
+	// Define the URI
+	uri := fmt.Sprintf("http://%s:%d/api/v1/payload/upload/%s", ip, port, id)
+
+	// Server expect key to be file
+	key := "file"
+
+	client := &http.Client{}
+
+	// Upload the file to the server
+	resp, err := UploadMultipartFile(client, uri, key, payloadFile)
+	if err != nil {
+		printLog(logError, fmt.Sprintf("Failed to upload payload: %v", err))
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		printLog(logError, fmt.Sprintf("Failed to upload payload, server responded with status: %s", resp.Status))
+		return
+	}
+
+	printLog(logInfo, "Payload uploaded successfully")
+}
+
 // Send request to server to generate loader and retrieves the loader
+func generateLoader(config map[string][]string) {
+
+}
