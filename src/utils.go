@@ -309,8 +309,8 @@ func sendPayload(ip string, port int, payloadFile string, id string) {
 	// Define the URI
 	uri := fmt.Sprintf("http://%s:%d/api/v1/payload/upload/%s", ip, port, id)
 
-	// Server expect key to be file
-	key := "file"
+	// Server expect key to be payload
+	key := "payload"
 
 	client := &http.Client{}
 
@@ -327,7 +327,7 @@ func sendPayload(ip string, port int, payloadFile string, id string) {
 		return
 	}
 
-	printLog(logInfo, "Payload uploaded successfully")
+	printLog(logInfo, fmt.Sprintf("%s", ansi.ColorFunc("default+hb")("Payload uploaded successfully")))
 }
 
 // Send request to server to generate loader and retrieves the loader
