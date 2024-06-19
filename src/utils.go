@@ -11,6 +11,7 @@ import (
 	"encoding/base32"
 	"encoding/binary"
     "io"
+	"bytes"
     "mime/multipart"
 
     "github.com/AlecAivazis/survey/v2"
@@ -302,7 +303,7 @@ func UploadMultipartFile(client *http.Client, uri, key, path string) (*http.Resp
     return resp, nil
 }
 
-func sendPayload(ip string, port int, payloadFile string, id string) {
+func sendPayload(ip string, port int, id string, payloadFile string) {
 	printLog(logInfo, fmt.Sprintf("%s %s", ansi.ColorFunc("default+hb")("Payload file: "), ansi.ColorFunc("cyan")(payloadFile)))
 	printLog(logInfo, fmt.Sprintf("%s %s", ansi.ColorFunc("default+hb")("Client ID: "), ansi.ColorFunc("cyan")(id)))
 
@@ -331,6 +332,41 @@ func sendPayload(ip string, port int, payloadFile string, id string) {
 }
 
 // Send request to server to generate loader and retrieves the loader
-func generateLoader(config map[string][]string) {
+func generateLoader(ip string, port int, id string, config map[string][]string) {
+	// Define the URI
+	uri := fmt.Sprintf("http://%s:%d/api/v1/payload/generate/%s", ip, port, id)
+	
+	// Convert config map to JSON
+	jsonData, err := json.Marshal(config)
+	if err != nil {
+		printLog(logError, fmt.Sprintf("Failed to marshal config to JSON: %v", err))
+		return
+	}
 
+	// Create a new POST request with the JSON payload
+	req, err := http.NewRequest(http.MethodPost, uri, bytes.NewBuffer(jsonData))
+	if err != nil {
+		printLog(logError, fmt.Sprintf("Failed to create request: %v", err))
+		return
+	}
+
+	// Set the content type to application/json
+	req.Header.Set("Content-Type", "application/json")
+
+	// Create a new HTTP client and send the request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		printLog(logError, fmt.Sprintf("Failed to send request: %v", err))
+		return
+	}
+	defer resp.Body.Close()
+
+	// Check the response status
+	if resp.StatusCode != http.StatusOK {
+		printLog(logError, fmt.Sprintf("Server responded with status: %s", resp.Status))
+		return
+	}
+
+	printLog(logInfo, fmt.Sprintf("%s", ansi.ColorFunc("default+hb")("Loader generated successfully")))
 }

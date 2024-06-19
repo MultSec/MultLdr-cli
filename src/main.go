@@ -106,7 +106,9 @@ func main() {
                         return nil
                     }
 
-                    sendPayload(ctx.String("server"), ctx.Int("port"), payloadFile, id)
+                    sendPayload(ctx.String("server"), ctx.Int("port"), id, payloadFile)
+
+                    generateLoader(ctx.String("server"), ctx.Int("port"), id, config)
                     
                     return nil
                 },
