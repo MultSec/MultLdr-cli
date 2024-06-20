@@ -13,6 +13,7 @@ import (
     "io"
 	"bytes"
     "mime/multipart"
+	"time"
 
     "github.com/AlecAivazis/survey/v2"
 	"github.com/mgutz/ansi"
@@ -387,7 +388,7 @@ func requestLoader(ip string, port int, id string) {
 		// Make GET request on statusUri
 		resp, err := http.Get(statusUri)
 		if err != nil {
-			fmt.Println("Error making request:", err)
+			printLog(logError, fmt.Sprintf("%v", err))
 			time.Sleep(1 * time.Second)
 			continue
 		}
@@ -397,19 +398,19 @@ func requestLoader(ip string, port int, id string) {
 		// Decode the JSON response
 		var statusResponse StatusResponse
 		if err := json.NewDecoder(resp.Body).Decode(&statusResponse); err != nil {
-			fmt.Println("Error decoding response:", err)
+			printLog(logError, fmt.Sprintf("%v", err))
 			time.Sleep(1 * time.Second)
 			continue
 		}
 
 		// Check if the status is "Finished"
 		if statusResponse.Status == "Finished" {
-			fmt.Println("Status is Finished")
+			printLog(logStatus, fmt.Sprintf("%s", ansi.ColorFunc("default+hb")("Status is Finished")))
 
 			// Make GET request on resultUri to download the result
 			resultResp, err := http.Get(resultUri)
 			if err != nil {
-				fmt.Println("Error making request:", err)
+				printLog(logError, fmt.Sprintf("%v", err))
 				return
 			}
 
@@ -418,7 +419,7 @@ func requestLoader(ip string, port int, id string) {
 			// Create the result file
 			out, err := os.Create("result_file")
 			if err != nil {
-				fmt.Println("Error creating file:", err)
+				printLog(logError, fmt.Sprintf("%v", err))
 				return
 			}
 			defer out.Close()
@@ -426,18 +427,18 @@ func requestLoader(ip string, port int, id string) {
 			// Write the response body to the file
 			_, err = io.Copy(out, resultResp.Body)
 			if err != nil {
-				fmt.Println("Error writing to file:", err)
+				printLog(logError, fmt.Sprintf("%v", err))
 				return
 			}
 
-			fmt.Println("Result file downloaded successfully")
+			printLog(logSuccess, fmt.Sprintf("%s", ansi.ColorFunc("default+hb")("Result file downloaded successfully")))
+
 			return
 		} else {
-			fmt.Println("Status is not finished yet")
+			printLog(logStatus, fmt.Sprintf("%s", ansi.ColorFunc("default+hb")("Status is not finished yet")))
 		}
 
 		// Wait for 1 second before making the next request
 		time.Sleep(1 * time.Second)
 	}
-}
 }
