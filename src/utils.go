@@ -400,8 +400,7 @@ func requestLoader(ip string, port int, id string) error {
 		resp, err := http.Get(statusUri)
 		if err != nil {
 			printLog(logError, fmt.Sprintf("%v", err))
-			time.Sleep(1 * time.Second)
-			continue
+			return err
 		}
 
 		defer resp.Body.Close()
