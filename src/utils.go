@@ -381,7 +381,7 @@ func generateLoader(ip string, port int, id string, config map[string][]string) 
 func requestLoader(ip string, port int, id string) {
 	// Define the URIs
 	statusUri := fmt.Sprintf("http://%s:%d/api/v1/payload/status/%s", ip, port, id)
-	resultUri := fmt.Sprintf("http://%s:%d/api/v1/payload/status/%s", ip, port, id)
+	resultUri := fmt.Sprintf("http://%s:%d/api/v1/payload/result/%s", ip, port, id)
 
 	// For every second make get request on status until response is finished
 	for {
@@ -417,7 +417,7 @@ func requestLoader(ip string, port int, id string) {
 			defer resultResp.Body.Close()
 
 			// Create the result file
-			out, err := os.Create("result_file")
+			out, err := os.Create("loader.exe")
 			if err != nil {
 				printLog(logError, fmt.Sprintf("%v", err))
 				return
@@ -434,8 +434,6 @@ func requestLoader(ip string, port int, id string) {
 			printLog(logSuccess, fmt.Sprintf("%s", ansi.ColorFunc("default+hb")("Result file downloaded successfully")))
 
 			return
-		} else {
-			printLog(logStatus, fmt.Sprintf("%s", ansi.ColorFunc("default+hb")("Status is not finished yet")))
 		}
 
 		// Wait for 1 second before making the next request
