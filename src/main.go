@@ -110,6 +110,8 @@ func main() {
 
                     generateLoader(ctx.String("server"), ctx.Int("port"), id, config)
                     
+                    requestLoader(ctx.String("server"), ctx.Int("port"), id)
+                    
                     return nil
                 },
             },
