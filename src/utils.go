@@ -309,7 +309,7 @@ func UploadMultipartFile(client *http.Client, uri, key, path string) (*http.Resp
     return resp, nil
 }
 
-func sendPayload(ip string, port int, id string, payloadFile string) {
+func sendPayload(ip string, port int, id string, payloadFile string) error {
 	printLog(logInfo, fmt.Sprintf("%s %s", ansi.ColorFunc("default+hb")("Payload file: "), ansi.ColorFunc("cyan")(payloadFile)))
 	printLog(logInfo, fmt.Sprintf("%s %s", ansi.ColorFunc("default+hb")("Client ID: "), ansi.ColorFunc("cyan")(id)))
 
@@ -325,20 +325,22 @@ func sendPayload(ip string, port int, id string, payloadFile string) {
 	resp, err := UploadMultipartFile(client, uri, key, payloadFile)
 	if err != nil {
 		printLog(logError, fmt.Sprintf("Failed to upload payload: %v", err))
-		return
+		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		printLog(logError, fmt.Sprintf("Failed to upload payload, server responded with status: %s", resp.Status))
-		return
+		return err
 	}
 
 	printLog(logInfo, fmt.Sprintf("%s", ansi.ColorFunc("default+hb")("Payload uploaded successfully")))
+
+	return nil
 }
 
 // Send request to server to generate loader and retrieves the loader
-func generateLoader(ip string, port int, id string, config map[string][]string) {
+func generateLoader(ip string, port int, id string, config map[string][]string) error {
 	// Define the URI
 	uri := fmt.Sprintf("http://%s:%d/api/v1/payload/generate/%s", ip, port, id)
 	
@@ -346,14 +348,14 @@ func generateLoader(ip string, port int, id string, config map[string][]string) 
 	jsonData, err := json.Marshal(config)
 	if err != nil {
 		printLog(logError, fmt.Sprintf("Failed to marshal config to JSON: %v", err))
-		return
+		return err
 	}
 
 	// Create a new POST request with the JSON payload
 	req, err := http.NewRequest(http.MethodPost, uri, bytes.NewBuffer(jsonData))
 	if err != nil {
 		printLog(logError, fmt.Sprintf("Failed to create request: %v", err))
-		return
+		return err
 	}
 
 	// Set the content type to application/json
@@ -364,21 +366,30 @@ func generateLoader(ip string, port int, id string, config map[string][]string) 
 	resp, err := client.Do(req)
 	if err != nil {
 		printLog(logError, fmt.Sprintf("Failed to send request: %v", err))
-		return
+		return err
 	}
 	defer resp.Body.Close()
 
+	// Read the response body
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		printLog(logError, fmt.Sprintf("Failed to read response body: %v", err))
+		return err
+	}
+
 	// Check the response status
 	if resp.StatusCode != http.StatusOK {
-		printLog(logError, fmt.Sprintf("Server responded with status: %s", resp.Status))
-		return
+		printLog(logError, fmt.Sprintf("Server responsestatus: %s, Content: %s", resp.Status, string(body)))
+		return fmt.Errorf("Server responded with status: %s", resp.Status)
 	}
 
 	printLog(logInfo, fmt.Sprintf("%s", ansi.ColorFunc("default+hb")("Loader generation requested successfully")))
+
+	return nil
 }
 
 // Requests loader from server every second
-func requestLoader(ip string, port int, id string) {
+func requestLoader(ip string, port int, id string) error {
 	// Define the URIs
 	statusUri := fmt.Sprintf("http://%s:%d/api/v1/payload/status/%s", ip, port, id)
 	resultUri := fmt.Sprintf("http://%s:%d/api/v1/payload/result/%s", ip, port, id)
@@ -411,7 +422,7 @@ func requestLoader(ip string, port int, id string) {
 			resultResp, err := http.Get(resultUri)
 			if err != nil {
 				printLog(logError, fmt.Sprintf("%v", err))
-				return
+				return err
 			}
 
 			defer resultResp.Body.Close()
@@ -420,7 +431,7 @@ func requestLoader(ip string, port int, id string) {
 			out, err := os.Create("loader.exe")
 			if err != nil {
 				printLog(logError, fmt.Sprintf("%v", err))
-				return
+				return err
 			}
 			defer out.Close()
 
@@ -428,12 +439,12 @@ func requestLoader(ip string, port int, id string) {
 			_, err = io.Copy(out, resultResp.Body)
 			if err != nil {
 				printLog(logError, fmt.Sprintf("%v", err))
-				return
+				return err
 			}
 
 			printLog(logSuccess, fmt.Sprintf("%s", ansi.ColorFunc("default+hb")("Result file downloaded successfully")))
 
-			return
+			return nil
 		}
 
 		// Wait for 1 second before making the next request

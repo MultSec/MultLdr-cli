@@ -106,12 +106,18 @@ func main() {
                         return nil
                     }
 
-                    sendPayload(ctx.String("server"), ctx.Int("port"), id, payloadFile)
+                    if sendPayload(ctx.String("server"), ctx.Int("port"), id, payloadFile) != nil {
+                        return nil
+                    }
 
-                    generateLoader(ctx.String("server"), ctx.Int("port"), id, config)
+                    if generateLoader(ctx.String("server"), ctx.Int("port"), id, config) != nil {
+                        return nil
+                    }
                     
-                    requestLoader(ctx.String("server"), ctx.Int("port"), id)
-                    
+                    if requestLoader(ctx.String("server"), ctx.Int("port"), id) != nil {
+                        return nil
+                    }
+
                     return nil
                 },
             },
