@@ -12,7 +12,7 @@
 
 * Run `go build` in the src directory of the project to build the binary.
 
-* Or use the pre-built binary in [Releases](https://github.com/MultSec/MultLdr-cli/releases).
+* Or use the pre-built binary in the bin directory.
 
 ```bash
 $ cd src
