@@ -1,4 +1,4 @@
-module multldr/cli
+module github.com/MultSec/MultLdr-cli
 
 go 1.22.4
 
