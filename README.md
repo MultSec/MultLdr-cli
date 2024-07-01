@@ -1,6 +1,6 @@
 <div align="center">
   <img width="125px" src="assets/MultLdr-cli.png" />
-  <h1>MultLdr</h1>
+  <h1>MultLdr-cli</h1>
   <br/>
 
   <p><i>MultLdr-cli is a command line interface for the MultLdr project, created by <a href="https://infosec.exchange/@Pengrey">@Pengrey</a>.</i></p>
