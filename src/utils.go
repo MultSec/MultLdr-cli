@@ -193,7 +193,7 @@ func getConfig(ip string, port int) (map[string][]string, error) {
 
 	printLog(logInfo, ansi.ColorFunc("default+hb")("Plugins Selection: "))
 	userConfig["keying"] 		= getOptions("keying", plugins.Keying, "Keying", false)
-	userConfig["payload_mods"] 	= getOptions("payload_mods", plugins.PayloadMods, "Payload Mods", false)
+	userConfig["payload_mods"] 	= getOptions("payload_mods", plugins.PayloadMods, "Payload Mods", true)
 	userConfig["execution"] 	= getOptions("execution", plugins.Execution, "Execution", true)
 	userConfig["pre_comp"] 		= getOptions("pre_comp", plugins.PreComp, "Pre Compilation", false)
 	userConfig["post_comp"] 	= getOptions("post_comp", plugins.PostComp, "Post Compilation", false)
